@@ -1,0 +1,106 @@
+/* =====================================================================
+   Martillo Autos · tokens de diseño
+   Paleta clara (requisito: evitar colores oscuros). Naranja de martillo
+   como único acento fuerte; verde/ámbar/rojo reservados al nivel de daño
+   y al estado de la puja.
+   ===================================================================== */
+:root {
+  --paper: #ffffff;
+  --canvas: #f5f6f4;
+  --line: #e2e5e8;
+  --line-strong: #cfd4d9;
+  --ink: #2f363d;          /* texto principal */
+  --ink-soft: #5d6772;     /* texto secundario */
+  --ink-faint: #8a939c;
+  --signal: #e9730c;       /* naranja martillo */
+  --signal-hover: #d6650a;
+  --signal-soft: #fdeedf;
+  --sky-soft: #eaf2fa;
+
+  --dmg-green: #2e9e5b;  --dmg-green-soft: #e4f4ea;
+  --dmg-amber: #c98d00;  --dmg-amber-soft: #fbf1d6;
+  --dmg-red:   #d64545;  --dmg-red-soft:   #fbe6e6;
+
+  --font-ui: 'Figtree', 'Segoe UI', system-ui, sans-serif;
+  --font-num: 'Barlow Semi Condensed', 'Arial Narrow', 'Figtree', sans-serif;
+
+  --radius-pill: 999px;
+  --radius-card: 10px;
+  --radius-field: 8px;
+  --shadow-panel: 0 6px 24px rgba(47, 54, 61, 0.10);
+  --wrap: 1320px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { margin: 0; }
+body {
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--canvas);
+  -webkit-font-smoothing: antialiased;
+}
+
+img { max-width: 100%; display: block; }
+a { color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
+
+h1, h2, h3 { line-height: 1.2; margin: 0; font-weight: 600; }
+h1 { font-size: clamp(1.6rem, 2.4vw, 2rem); letter-spacing: -0.01em; }
+h2 { font-size: 1.25rem; }
+h3 { font-size: 1.05rem; }
+
+.wrap { width: 100%; max-width: var(--wrap); margin: 0 auto; padding: 0 24px; }
+
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; letter-spacing: 0.01em; }
+
+/* --- Botones --- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 1px solid transparent; border-radius: var(--radius-pill);
+  padding: 9px 20px; font-weight: 600; font-size: 0.95rem;
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+  transition: background-color .15s, border-color .15s, color .15s;
+}
+.btn:disabled { cursor: not-allowed; opacity: .55; }
+.btn-primary { background: var(--signal); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--signal-hover); }
+.btn-outline { background: var(--paper); border-color: var(--signal); color: var(--signal); }
+.btn-outline:hover:not(:disabled) { background: var(--signal-soft); }
+.btn-quiet { background: var(--paper); border-color: var(--line-strong); color: var(--ink); }
+.btn-quiet:hover:not(:disabled) { border-color: var(--ink-faint); }
+.btn-block { width: 100%; padding: 12px 20px; font-size: 1rem; }
+
+:focus-visible { outline: 3px solid rgba(233, 115, 12, .45); outline-offset: 2px; }
+
+/* --- Campos --- */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: .85rem; font-weight: 600; color: var(--ink-soft); }
+.input, .select, .textarea {
+  width: 100%; border: 1px solid var(--line-strong); border-radius: var(--radius-field);
+  background: var(--paper); padding: 10px 12px; min-height: 42px;
+}
+.input:focus, .select:focus, .textarea:focus { outline: none; border-color: var(--signal); box-shadow: 0 0 0 3px var(--signal-soft); }
+.input.invalid, .select.invalid { border-color: var(--dmg-red); }
+.field-error { color: var(--dmg-red); font-size: .8rem; }
+
+/* --- Nivel de daño --- */
+.dmg { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; font-weight: 600;
+       padding: 3px 10px 3px 8px; border-radius: var(--radius-pill); }
+.dmg::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.dmg-VERDE    { color: var(--dmg-green); background: var(--dmg-green-soft); }
+.dmg-AMARILLO { color: var(--dmg-amber); background: var(--dmg-amber-soft); }
+.dmg-ROJO     { color: var(--dmg-red);   background: var(--dmg-red-soft); }
+
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--paper); border: 1px solid var(--line); border-left: 4px solid var(--signal);
+  box-shadow: var(--shadow-panel); border-radius: var(--radius-field);
+  padding: 12px 18px; z-index: 100; max-width: calc(100vw - 32px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

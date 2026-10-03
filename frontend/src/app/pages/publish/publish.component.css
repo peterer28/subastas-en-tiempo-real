@@ -1,0 +1,54 @@
+.page { padding-top: 24px; padding-bottom: 64px; max-width: 980px; }
+.back { color: var(--ink-soft); text-decoration: none; font-size: .9rem; }
+.back:hover { color: var(--signal); }
+h1 { margin-top: 10px; }
+.lead { color: var(--ink-soft); margin: 6px 0 22px; }
+.notice { background: var(--dmg-amber-soft); color: #8a6200; padding: 12px 16px; border-radius: var(--radius-field); }
+form.disabled { opacity: .6; pointer-events: none; }
+
+.block { border: 1px solid var(--line); background: var(--paper); border-radius: var(--radius-card); padding: 20px 24px 24px; margin: 0 0 18px; }
+legend { font-size: 1.1rem; font-weight: 600; padding: 0 8px; margin-left: -8px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-top: 6px; }
+.grid.three { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.full { margin-top: 16px; }
+.textarea { resize: vertical; min-height: 100px; }
+.hint { color: var(--ink-faint); font-size: .82rem; margin: 0 0 8px; }
+
+.segmented { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line-strong); border-radius: var(--radius-field); overflow: hidden; min-height: 42px; }
+.segmented button { border: 0; border-right: 1px solid var(--line); background: var(--paper); cursor: pointer; font-weight: 600; font-size: .88rem; }
+.segmented button:last-child { border-right: 0; }
+.segmented button.on { background: var(--signal-soft); color: var(--signal-hover); }
+.segmented.invalid { border-color: var(--dmg-red); }
+
+.damage { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 8px; }
+.damage-tile { border: 2px solid var(--line); border-radius: var(--radius-card); background: var(--paper); padding: 14px 16px; cursor: pointer;
+               display: grid; grid-template-columns: 18px 1fr; column-gap: 10px; text-align: left; align-items: center; }
+.damage-tile .swatch { width: 18px; height: 18px; border-radius: 50%; grid-row: span 2; }
+.damage-tile span:last-child { color: var(--ink-soft); font-size: .85rem; }
+.tile-VERDE .swatch { background: var(--dmg-green); }
+.tile-AMARILLO .swatch { background: var(--dmg-amber); }
+.tile-ROJO .swatch { background: var(--dmg-red); }
+.tile-VERDE.on { border-color: var(--dmg-green); background: var(--dmg-green-soft); }
+.tile-AMARILLO.on { border-color: var(--dmg-amber); background: var(--dmg-amber-soft); }
+.tile-ROJO.on { border-color: var(--dmg-red); background: var(--dmg-red-soft); }
+
+.drop { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; border: 2px dashed var(--line-strong);
+        border-radius: var(--radius-card); padding: 28px 16px; text-align: center; cursor: pointer; background: var(--canvas); }
+.drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.drop.over { border-color: var(--signal); background: var(--signal-soft); }
+.drop.invalid { border-color: var(--dmg-red); }
+.progress-text { font-size: .88rem; color: var(--dmg-red); font-weight: 600; }
+.progress-text.ok { color: var(--dmg-green); }
+
+.thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 14px; }
+.thumb { position: relative; margin: 0; border-radius: 8px; overflow: hidden; aspect-ratio: 4 / 3; background: var(--canvas); border: 1px solid var(--line); }
+.thumb.cover { outline: 3px solid var(--signal); outline-offset: -3px; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; }
+.thumb figcaption { position: absolute; top: 6px; left: 6px; background: var(--signal); color: #fff; font-size: .72rem; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-pill); }
+.thumb-actions { position: absolute; bottom: 6px; right: 6px; display: flex; gap: 4px; }
+.thumb-actions button { border: 0; background: rgba(255,255,255,.95); border-radius: 6px; padding: 3px 8px; font-size: .75rem; cursor: pointer; font-weight: 600; }
+.thumb-actions button:hover { color: var(--signal); }
+
+.alert { background: var(--dmg-red-soft); color: #b23434; padding: 12px 14px; border-radius: var(--radius-field); }
+.actions { display: flex; justify-content: flex-end; gap: 10px; }
+@media (max-width: 640px) { .damage { grid-template-columns: 1fr; } .block { padding: 16px; } }

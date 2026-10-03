@@ -1,0 +1,232 @@
+<section class="wrap page">
+  <h1>Vehículos en subasta</h1>
+
+  <!-- Tipos de artículo como accesos rápidos -->
+  @if (facets()?.itemTypes?.length) {
+    <div class="quick" role="list">
+      @for (t of facets()!.itemTypes; track t.id) {
+        <button role="listitem" class="quick-chip" [class.on]="isChecked('itemTypeId', t.id)" (click)="quickType(t.id)">
+          {{ t.name }} <span>({{ t.count }})</span>
+        </button>
+      }
+    </div>
+  }
+
+  <div class="layout">
+    <!-- ================= Barra lateral de filtros ================= -->
+    <aside class="filters" [class.open]="filtersOpen()" aria-label="Filtros">
+      <div class="filters-head">
+        <h2>Filtros</h2>
+        <button class="close" (click)="filtersOpen.set(false)" aria-label="Cerrar filtros">×</button>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button role="tab" [class.on]="tab() === 'open'" (click)="setTab('open')">
+          En subasta ({{ facets()?.tabs?.open ?? 0 }})
+        </button>
+        <button role="tab" [class.on]="tab() === 'closed'" (click)="setTab('closed')">
+          Cerradas ({{ facets()?.tabs?.closed ?? 0 }})
+        </button>
+      </div>
+
+      <!-- Nivel de daño -->
+      <div class="section">
+        <button class="section-head" (click)="toggleSection('damage')" [attr.aria-expanded]="openSections()['damage']">
+          Nivel de daño <span class="chev" [class.up]="openSections()['damage']"></span>
+        </button>
+        @if (openSections()['damage']) {
+          <div class="damage-options">
+            @for (d of catalogs()?.damageLevels ?? []; track d.id) {
+              <label class="damage-option dmg-{{ d.code }}" [class.on]="isChecked('damage', d.code!)">
+                <input type="checkbox" [checked]="isChecked('damage', d.code!)" (change)="toggle('damage', d.code!)">
+                <span class="dot"></span>
+                <span class="d-text"><b>{{ d.name }}</b> {{ d.description }}</span>
+                <span class="count">{{ countFor(facets()?.damage, d.code!) }}</span>
+              </label>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Tipo de artículo -->
+      <div class="section">
+        <button class="section-head" (click)="toggleSection('itemType')" [attr.aria-expanded]="openSections()['itemType']">
+          Tipo de artículo <span class="chev" [class.up]="openSections()['itemType']"></span>
+        </button>
+        @if (openSections()['itemType']) {
+          @for (t of facets()?.itemTypes ?? []; track t.id) {
+            <label class="check">
+              <input type="checkbox" [checked]="isChecked('itemTypeId', t.id)" (change)="toggle('itemTypeId', t.id)">
+              {{ t.name }} <span class="count">({{ t.count }})</span>
+            </label>
+          }
+        }
+      </div>
+
+      <!-- Marca -->
+      <div class="section">
+        <button class="section-head" (click)="toggleSection('make')" [attr.aria-expanded]="openSections()['make']">
+          Marca <span class="chev" [class.up]="openSections()['make']"></span>
+        </button>
+        @if (openSections()['make']) {
+          <input class="input small" type="search" placeholder="Buscar marca"
+                 [ngModel]="makeTerm()" (ngModelChange)="makeTerm.set($event)">
+          @for (m of visibleMakes(); track m.id) {
+            <label class="check">
+              <input type="checkbox" [checked]="isChecked('makeId', m.id)" (change)="toggle('makeId', m.id)">
+              {{ m.name }} <span class="count">({{ m.count }})</span>
+            </label>
+          } @empty {
+            <p class="hint">Ninguna marca coincide.</p>
+          }
+          @if (!makeTerm() && (facets()?.makes?.length ?? 0) > 8) {
+            <button class="link" (click)="showAllMakes.set(!showAllMakes())">{{ showAllMakes() ? 'Ver menos' : 'Ver más' }}</button>
+          }
+        }
+      </div>
+
+      <!-- Modelo (depende de la marca) -->
+      <div class="section">
+        <button class="section-head" (click)="toggleSection('model')" [attr.aria-expanded]="openSections()['model']">
+          Modelo <span class="chev" [class.up]="openSections()['model']"></span>
+        </button>
+        @if (openSections()['model']) {
+          @for (m of availableModels(); track m.id) {
+            <label class="check">
+              <input type="checkbox" [checked]="isChecked('modelId', m.id)" (change)="toggle('modelId', m.id)">
+              {{ m.name }}
+            </label>
+          } @empty {
+            <p class="hint">Elige una marca para ver sus modelos.</p>
+          }
+        }
+      </div>
+
+      <!-- Año -->
+      <div class="section">
+        <button class="section-head" (click)="toggleSection('year')" [attr.aria-expanded]="openSections()['year']">
+          Año <span class="chev" [class.up]="openSections()['year']"></span>
+        </button>
+        @if (openSections()['year']) {
+          <div class="years">
+            <input class="input small" type="number" placeholder="Desde" min="1950" max="2100" aria-label="Año desde"
+                   [ngModel]="yearFrom()" (ngModelChange)="yearFrom.set($event || null)" (change)="applyYears()">
+            <input class="input small" type="number" placeholder="Hasta" min="1950" max="2100" aria-label="Año hasta"
+                   [ngModel]="yearTo()" (ngModelChange)="yearTo.set($event || null)" (change)="applyYears()">
+          </div>
+        }
+      </div>
+
+      <!-- Combustible, transmisión, tren de manejo -->
+      @for (sec of simpleSections; track sec.name) {
+        <div class="section">
+          <button class="section-head" (click)="toggleSection(sec.name)" [attr.aria-expanded]="openSections()[sec.name]">
+            {{ sec.title }} <span class="chev" [class.up]="openSections()[sec.name]"></span>
+          </button>
+          @if (openSections()[sec.name]) {
+            @for (o of facets()?.[sec.facet] ?? []; track o.id) {
+              <label class="check">
+                <input type="checkbox" [checked]="isChecked(sec.key, o.id)" (change)="toggle(sec.key, o.id)">
+                {{ o.name }} <span class="count">({{ o.count }})</span>
+              </label>
+            } @empty { <p class="hint">Sin opciones en esta pestaña.</p> }
+          }
+        </div>
+      }
+
+      <!-- Cilindros -->
+      <div class="section">
+        <button class="section-head" (click)="toggleSection('cylinders')" [attr.aria-expanded]="openSections()['cylinders']">
+          Número de cilindros <span class="chev" [class.up]="openSections()['cylinders']"></span>
+        </button>
+        @if (openSections()['cylinders']) {
+          <div class="pills">
+            @for (n of cylinderOptions; track n) {
+              <button class="pill" [class.on]="isChecked('cylinders', n)" (click)="toggle('cylinders', n)">
+                {{ n === 0 ? 'Eléctrico' : n }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <button class="btn btn-primary btn-block apply-mobile" (click)="filtersOpen.set(false)">
+        Ver {{ total() }} resultados
+      </button>
+    </aside>
+
+    <!-- ================= Resultados ================= -->
+    <div class="results">
+      <div class="toolbar">
+        <button class="btn btn-quiet only-mobile" (click)="filtersOpen.set(true)">
+          Filtros @if (chips().length) { <span class="badge">{{ chips().length }}</span> }
+        </button>
+        <span class="count-text">{{ total() }} {{ total() === 1 ? 'resultado' : 'resultados' }}</span>
+        <div class="toolbar-right">
+          <label class="sort">
+            <span>Ordenar:</span>
+            <select class="select" [ngModel]="sort()" (ngModelChange)="setSort($event)">
+              <option value="ending">Cierran primero</option>
+              <option value="newest">Más recientes</option>
+              <option value="price_asc">Precio: menor a mayor</option>
+              <option value="price_desc">Precio: mayor a menor</option>
+              <option value="year_desc">Año: más nuevo</option>
+            </select>
+          </label>
+          <div class="view-toggle" role="group" aria-label="Vista">
+            <button [class.on]="layout() === 'grid'" (click)="layout.set('grid')" aria-label="Cuadrícula">
+              <svg viewBox="0 0 20 20" width="18" height="18"><path d="M3 3h6v6H3zM11 3h6v6h-6zM3 11h6v6H3zM11 11h6v6h-6z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+            </button>
+            <button [class.on]="layout() === 'list'" (click)="layout.set('list')" aria-label="Lista">
+              <svg viewBox="0 0 20 20" width="18" height="18"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      @if (chips().length) {
+        <div class="chips">
+          @for (chip of chips(); track chip.label) {
+            <button class="chip" (click)="removeChip(chip)" [attr.aria-label]="'Quitar filtro ' + chip.label">
+              {{ chip.label }} <span aria-hidden="true">×</span>
+            </button>
+          }
+          <button class="link" (click)="clearAll()">Limpiar todo</button>
+        </div>
+      }
+
+      @if (error()) {
+        <div class="empty">
+          <p>{{ error() }}</p>
+          <button class="btn btn-outline" (click)="goTo(page())">Reintentar</button>
+        </div>
+      } @else if (loading() && !items().length) {
+        <div class="grid">
+          @for (i of [1,2,3,4,5,6,7,8]; track i) { <div class="skeleton"></div> }
+        </div>
+      } @else if (!items().length) {
+        <div class="empty">
+          <h2>No hay vehículos con esos filtros</h2>
+          <p>Quita algún filtro o busca otra marca para ver más resultados.</p>
+          <button class="btn btn-outline" (click)="clearAll()">Limpiar filtros</button>
+        </div>
+      } @else {
+        <div [class.grid]="layout() === 'grid'" [class.list]="layout() === 'list'" [class.dim]="loading()">
+          @for (v of items(); track v.id) {
+            <app-vehicle-card [vehicle]="v" [live]="live()[v.auction.id]" [now]="clock.now()" [layout]="layout()" />
+          }
+        </div>
+
+        @if (totalPages() > 1) {
+          <nav class="pager" aria-label="Paginación">
+            <button class="btn btn-quiet" [disabled]="page() === 1" (click)="goTo(page() - 1)">Anterior</button>
+            <span>Página {{ page() }} de {{ totalPages() }}</span>
+            <button class="btn btn-quiet" [disabled]="page() === totalPages()" (click)="goTo(page() + 1)">Siguiente</button>
+          </nav>
+        }
+      }
+    </div>
+  </div>
+</section>
+
+@if (filtersOpen()) { <div class="scrim" (click)="filtersOpen.set(false)"></div> }

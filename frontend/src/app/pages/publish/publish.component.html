@@ -1,0 +1,184 @@
+<section class="wrap page">
+  <a routerLink="/mis-publicaciones" class="back">‹ Mis publicaciones</a>
+  <h1>{{ editId ? 'Editar publicación' : 'Publicar un vehículo' }}</h1>
+  <p class="lead">Todos los campos marcados son obligatorios. La subasta se abre sola a la hora de inicio.</p>
+
+  @if (locked()) { <p class="notice">{{ locked() }}</p> }
+
+  @if (loading()) {
+    <p class="lead">Cargando formulario…</p>
+  } @else {
+  <form (ngSubmit)="save()" novalidate [class.disabled]="!!locked()">
+    <!-- ===== Ficha técnica ===== -->
+    <fieldset class="block">
+      <legend>Ficha técnica</legend>
+      <div class="grid">
+        <div class="field">
+          <label for="year">Año *</label>
+          <input id="year" class="input" type="number" name="year" min="1950" [max]="currentYear + 1"
+                 [(ngModel)]="form.year" [class.invalid]="!!errors()['year']">
+          @if (errors()['year']) { <span class="field-error">{{ errors()['year'] }}</span> }
+        </div>
+        <div class="field">
+          <label for="itemType">Tipo de artículo *</label>
+          <select id="itemType" class="select" name="itemTypeId" [(ngModel)]="form.itemTypeId" [class.invalid]="!!errors()['itemTypeId']">
+            <option [ngValue]="null" disabled>Elige un tipo</option>
+            @for (o of catalogs()?.itemTypes ?? []; track o.id) { <option [ngValue]="o.id">{{ o.name }}</option> }
+          </select>
+          @if (errors()['itemTypeId']) { <span class="field-error">{{ errors()['itemTypeId'] }}</span> }
+        </div>
+        <div class="field">
+          <label for="make">Marca *</label>
+          <select id="make" class="select" name="makeId" [ngModel]="form.makeId" (ngModelChange)="onMakeChange($event)" [class.invalid]="!!errors()['makeId']">
+            <option [ngValue]="null" disabled>Elige una marca</option>
+            @for (o of catalogs()?.makes ?? []; track o.id) { <option [ngValue]="o.id">{{ o.name }}</option> }
+          </select>
+          @if (errors()['makeId']) { <span class="field-error">{{ errors()['makeId'] }}</span> }
+        </div>
+        <div class="field">
+          <label for="model">Modelo *</label>
+          <select id="model" class="select" name="modelId" [(ngModel)]="form.modelId" [disabled]="!makeId()" [class.invalid]="!!errors()['modelId']">
+            <option [ngValue]="null" disabled>{{ makeId() ? 'Elige un modelo' : 'Primero elige la marca' }}</option>
+            @for (o of models(); track o.id) { <option [ngValue]="o.id">{{ o.name }}</option> }
+          </select>
+          @if (errors()['modelId']) { <span class="field-error">{{ errors()['modelId'] }}</span> }
+        </div>
+        <div class="field">
+          <label for="engine">Motor *</label>
+          <input id="engine" class="input" name="engine" placeholder="ej. 2.5L I4 DOHC" maxlength="80"
+                 [(ngModel)]="form.engine" [class.invalid]="!!errors()['engine']">
+          @if (errors()['engine']) { <span class="field-error">{{ errors()['engine'] }}</span> }
+        </div>
+        <div class="field">
+          <label for="trans">Transmisión *</label>
+          <select id="trans" class="select" name="transmissionId" [(ngModel)]="form.transmissionId" [class.invalid]="!!errors()['transmissionId']">
+            <option [ngValue]="null" disabled>Elige una</option>
+            @for (o of catalogs()?.transmissions ?? []; track o.id) { <option [ngValue]="o.id">{{ o.name }}</option> }
+          </select>
+          @if (errors()['transmissionId']) { <span class="field-error">{{ errors()['transmissionId'] }}</span> }
+        </div>
+        <div class="field">
+          <label for="fuel">Tipo de combustible *</label>
+          <select id="fuel" class="select" name="fuelTypeId" [(ngModel)]="form.fuelTypeId" [class.invalid]="!!errors()['fuelTypeId']">
+            <option [ngValue]="null" disabled>Elige uno</option>
+            @for (o of catalogs()?.fuelTypes ?? []; track o.id) { <option [ngValue]="o.id">{{ o.name }}</option> }
+          </select>
+          @if (errors()['fuelTypeId']) { <span class="field-error">{{ errors()['fuelTypeId'] }}</span> }
+        </div>
+        <div class="field">
+          <label>Tren de manejo *</label>
+          <div class="segmented" role="radiogroup" [class.invalid]="!!errors()['drivetrainId']">
+            @for (o of catalogs()?.drivetrains ?? []; track o.id) {
+              <button type="button" role="radio" [attr.aria-checked]="form.drivetrainId === o.id"
+                      [class.on]="form.drivetrainId === o.id" (click)="form.drivetrainId = o.id" [title]="o.name">{{ o.code }}</button>
+            }
+          </div>
+          @if (errors()['drivetrainId']) { <span class="field-error">{{ errors()['drivetrainId'] }}</span> }
+        </div>
+        <div class="field">
+          <label for="cyl">Número de cilindros *</label>
+          <input id="cyl" class="input" type="number" name="cylinders" min="0" max="16" placeholder="0 si es eléctrico"
+                 [(ngModel)]="form.cylinders" [class.invalid]="!!errors()['cylinders']">
+          @if (errors()['cylinders']) { <span class="field-error">{{ errors()['cylinders'] }}</span> }
+        </div>
+        <div class="field">
+          <label for="km">Kilometraje</label>
+          <input id="km" class="input" type="number" name="mileage" min="0" [(ngModel)]="form.mileage">
+        </div>
+        <div class="field">
+          <label for="vin">VIN</label>
+          <input id="vin" class="input" name="vin" maxlength="17" [(ngModel)]="form.vin">
+        </div>
+        <div class="field">
+          <label for="loc">Ubicación</label>
+          <input id="loc" class="input" name="location" placeholder="ej. Escuintla" [(ngModel)]="form.location">
+        </div>
+      </div>
+      <div class="field full">
+        <label for="desc">Descripción</label>
+        <textarea id="desc" class="textarea" name="description" rows="4" maxlength="4000"
+                  placeholder="Describe los daños, reparaciones y el estado mecánico." [(ngModel)]="form.description"></textarea>
+      </div>
+    </fieldset>
+
+    <!-- ===== Estado de daño ===== -->
+    <fieldset class="block">
+      <legend>Estado de daño *</legend>
+      <div class="damage" role="radiogroup">
+        @for (d of catalogs()?.damageLevels ?? []; track d.id) {
+          <button type="button" role="radio" class="damage-tile tile-{{ d.code }}" [class.on]="form.damageLevelId === d.id"
+                  [attr.aria-checked]="form.damageLevelId === d.id" (click)="selectDamage(d.id)">
+            <span class="swatch"></span>
+            <b>{{ d.name }}</b>
+            <span>{{ d.description }}</span>
+          </button>
+        }
+      </div>
+      @if (errors()['damageLevelId']) { <span class="field-error">{{ errors()['damageLevelId'] }}</span> }
+    </fieldset>
+
+    <!-- ===== Galería ===== -->
+    <fieldset class="block">
+      <legend>Galería fotográfica *</legend>
+      <p class="hint">Mínimo {{ minPhotos }} y máximo {{ maxPhotos }} fotos JPG, PNG o WEBP. La primera es la portada.</p>
+      <label class="drop" [class.over]="dragOver()" [class.invalid]="!!errors()['photos']"
+             (dragover)="$event.preventDefault(); dragOver.set(true)" (dragleave)="dragOver.set(false)" (drop)="onDrop($event)">
+        <input type="file" accept="image/jpeg,image/png,image/webp" multiple (change)="onFileInput($event)"
+               [disabled]="photoCount() >= maxPhotos">
+        <b>Arrastra fotos aquí o haz clic para elegirlas</b>
+        <span class="progress-text" [class.ok]="photoCount() >= minPhotos">{{ photoCount() }} de {{ minPhotos }} fotos mínimas</span>
+      </label>
+      @if (errors()['photos']) { <span class="field-error">{{ errors()['photos'] }}</span> }
+
+      @if (photos().length) {
+        <div class="thumbs">
+          @for (p of photos(); track p.url; let i = $index) {
+            <figure class="thumb" [class.cover]="i === 0">
+              <img [src]="p.url" [alt]="'Foto ' + (i + 1)">
+              @if (i === 0) { <figcaption>Portada</figcaption> }
+              <div class="thumb-actions">
+                @if (i > 0) { <button type="button" (click)="makeCover(i)">Portada</button> }
+                <button type="button" (click)="removePhoto(i)" [attr.aria-label]="'Quitar foto ' + (i + 1)">Quitar</button>
+              </div>
+            </figure>
+          }
+        </div>
+      }
+    </fieldset>
+
+    <!-- ===== Parámetros de la subasta ===== -->
+    <fieldset class="block">
+      <legend>Parámetros de la subasta</legend>
+      <div class="grid three">
+        <div class="field">
+          <label for="base">Monto base (Q) *</label>
+          <input id="base" class="input" type="number" name="basePrice" min="1" step="100" placeholder="20000"
+                 [(ngModel)]="form.basePrice" [class.invalid]="!!errors()['basePrice']">
+          @if (errors()['basePrice']) { <span class="field-error">{{ errors()['basePrice'] }}</span> }
+          <span class="hint">Si al cierre nadie lo alcanza, la subasta se declara desierta.</span>
+        </div>
+        <div class="field">
+          <label for="start">Fecha y hora de inicio *</label>
+          <input id="start" class="input" type="datetime-local" name="startsAt" [(ngModel)]="form.startsAt" [class.invalid]="!!errors()['startsAt']">
+          @if (errors()['startsAt']) { <span class="field-error">{{ errors()['startsAt'] }}</span> }
+        </div>
+        <div class="field">
+          <label for="end">Fecha y hora de cierre *</label>
+          <input id="end" class="input" type="datetime-local" name="endsAt" [(ngModel)]="form.endsAt" [class.invalid]="!!errors()['endsAt']">
+          @if (errors()['endsAt']) { <span class="field-error">{{ errors()['endsAt'] }}</span> }
+          <span class="hint">Una oferta en el último minuto lo reinicia a 60 segundos.</span>
+        </div>
+      </div>
+    </fieldset>
+
+    @if (error()) { <p class="alert" role="alert">{{ error() }}</p> }
+
+    <div class="actions">
+      <a class="btn btn-quiet" routerLink="/mis-publicaciones">Cancelar</a>
+      <button class="btn btn-primary" type="submit" [disabled]="saving() || !!locked()">
+        {{ saving() ? 'Guardando…' : editId ? 'Guardar cambios' : 'Publicar vehículo' }}
+      </button>
+    </div>
+  </form>
+  }
+</section>

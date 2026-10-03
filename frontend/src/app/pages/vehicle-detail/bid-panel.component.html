@@ -1,0 +1,153 @@
+<div class="panel" [class.final]="phase() === 'final'" [class.closed]="phase() === 'closed'">
+  <!-- Estado del usuario respecto a la puja -->
+  @if (phase() !== 'closed' && standing() === 'winning') {
+    <div class="standing win" role="status" aria-live="polite">¡Vas ganando esta subasta!</div>
+  } @else if (phase() !== 'closed' && standing() === 'outbid') {
+    <div class="standing lost" role="status" aria-live="assertive">
+      Tu oferta ha sido superada. ¡Haz tu oferta ahora antes de que termine el tiempo!
+    </div>
+  }
+
+  <div class="panel-top">
+    <div class="tabs" role="tablist">
+      <button role="tab" [class.on]="tab() === 'info'" (click)="tab.set('info')">Info</button>
+      <button role="tab" [class.on]="tab() === 'bids'" (click)="tab.set('bids')">Ofertas ({{ bidCount() }})</button>
+    </div>
+  </div>
+
+  @if (tab() === 'info') {
+    <!-- ================= INFO ================= -->
+    <div class="info">
+      @if (phase() === 'final') {
+        <!-- Rueda del minuto final -->
+        <div class="ring-wrap" [class.pulse]="pulse()">
+          <svg viewBox="0 0 128 128" class="ring" [class.danger]="seconds() <= 10" aria-hidden="true">
+            <circle cx="64" cy="64" [attr.r]="ringR" class="track" />
+            <circle cx="64" cy="64" [attr.r]="ringR" class="progress"
+                    [attr.stroke-dasharray]="ringC" [attr.stroke-dashoffset]="ringOffset()" />
+          </svg>
+          <div class="ring-center" role="timer" aria-live="off">
+            <span class="sec num">{{ seconds() }}</span>
+            <span class="sec-label">segundos</span>
+          </div>
+        </div>
+        <p class="final-note">Cada nueva oferta reinicia el minuto. Gana la última oferta si nadie la supera en 60 segundos.</p>
+      }
+
+      <div class="amount-block">
+        @if (outcome(); as o) {
+          @if (o.sold) {
+            <span class="big num">{{ o.price | q }}</span>
+            <span class="caption">Precio final, vendido</span>
+          } @else {
+            <span class="big num muted">{{ auction()?.basePrice | q }}</span>
+            <span class="caption">Monto base no alcanzado</span>
+          }
+        } @else if (highBid() > 0) {
+          <span class="big num">{{ highBid() | q }}</span>
+          <span class="caption">Oferta más alta</span>
+        } @else {
+          <span class="big num">{{ auction()?.basePrice ?? 0 | q }}</span>
+          <span class="caption">Monto base, aún sin ofertas</span>
+        }
+      </div>
+
+      @switch (phase()) {
+        @case ('closed') {
+          <div class="closed-box">
+            <b>Oferta cerrada</b>
+            @if (outcome()?.sold) {
+              <span>La subasta terminó y el vehículo fue adjudicado.</span>
+              @if (standing() === 'winning') { <span class="won">Ganaste esta subasta.</span> }
+            } @else {
+              <span>Subasta desierta: ninguna oferta alcanzó el monto base.</span>
+            }
+          </div>
+        }
+        @case ('scheduled') {
+          <button class="btn btn-primary btn-block" disabled>Ofertar ahora</button>
+          <p class="sub-note">Las ofertas se abren en <b class="num">{{ auction()!.startsAt - now() | remaining }}</b></p>
+        }
+        @default {
+          @if (isOwner()) {
+            <div class="owner-box">Esta es tu publicación. Las ofertas se actualizan aquí en tiempo real.</div>
+          } @else {
+            <button class="btn btn-primary btn-block" (click)="openBidding()">
+              {{ loggedIn() ? 'Ofertar ahora' : 'Inicia sesión para ofertar' }}
+            </button>
+          }
+        }
+      }
+
+      <ul class="facts">
+        @if (phase() === 'live') {
+          <li>
+            <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 5.5V10l3 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            Cierra en <b class="num countdown">{{ remaining() | remaining }}</b>
+          </li>
+        }
+        @if (auction(); as a) {
+          <li>
+            <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><rect x="3" y="4.5" width="14" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 8.5h14M7 2.5v4M13 2.5v4" stroke="currentColor" stroke-width="1.6"/></svg>
+            {{ phase() === 'closed' ? 'Cerró' : 'Cierre' }}: {{ a.endsAt | when }}
+          </li>
+          <li>
+            <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M4 16h12M6 16V9l4-4 4 4v7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+            Monto base: {{ a.basePrice | q }}
+          </li>
+        }
+      </ul>
+      <p class="rules">Cada oferta debe superar la actual en al menos 10 %. Tu identidad nunca se muestra a otros postores.</p>
+    </div>
+  } @else {
+    <!-- ================= HISTORIAL + NUEVA OFERTA ================= -->
+    <div class="history" #history>
+      @for (b of bids(); track b.key; let last = $last) {
+        <div class="bid" [class.top]="last" [class.mine]="b.bidderToken === myToken()">
+          <span class="who num">{{ b.alias }}{{ b.bidderToken === myToken() ? ' (tú)' : '' }}</span>
+          <span class="pill num">{{ b.amount | q }}{{ last ? ' (más alta)' : '' }}</span>
+          <span class="time">{{ b.createdAt | when }}</span>
+        </div>
+      } @empty {
+        <p class="no-bids">Todavía no hay ofertas. La primera debe ser de al menos {{ auction()?.basePrice ?? 0 | q }}.</p>
+      }
+    </div>
+
+    <div class="entry">
+      @if (phase() === 'final') {
+        <div class="mini-timer num" [class.danger]="seconds() <= 10" [class.pulse]="pulse()">{{ seconds() }} s</div>
+      } @else if (phase() === 'live') {
+        <div class="entry-time">Cierra en <b class="num">{{ remaining() | remaining }}</b></div>
+      }
+
+      @if (canBid()) {
+        <div class="stepper">
+          <button class="step" (click)="dec()" [disabled]="amount() <= nextMin()" aria-label="Bajar monto">−</button>
+          <label class="amount-field" [class.invalid]="amountTooLow()">
+            <span>Q</span>
+            <input #amountInput class="num" inputmode="numeric" [ngModel]="amount()" (ngModelChange)="onAmountInput('' + $event)"
+                   (keydown.enter)="submit()" aria-label="Monto de tu oferta en quetzales">
+            <span class="cur">GTQ</span>
+          </label>
+          <button class="step plus" (click)="inc()" aria-label="Subir monto">+</button>
+        </div>
+        <p class="min-hint">Mínimo para ofertar: <b class="num">{{ nextMin() | q }}</b></p>
+        <button class="btn btn-primary btn-block" (click)="submit()" [disabled]="sending() || amountTooLow()">
+          {{ sending() ? 'Enviando…' : 'Ofertar ' + (amount() | q) }}
+        </button>
+      } @else if (phase() === 'closed') {
+        <div class="closed-box"><b>Oferta cerrada</b></div>
+      } @else if (!loggedIn()) {
+        <button class="btn btn-primary btn-block" (click)="openBidding()">Inicia sesión para ofertar</button>
+      } @else if (isOwner()) {
+        <div class="owner-box">No puedes ofertar en tu propia publicación.</div>
+      } @else {
+        <button class="btn btn-primary btn-block" disabled>Las ofertas aún no abren</button>
+      }
+
+      @if (message(); as m) {
+        <p class="msg" [class.ok]="m.kind === 'ok'" [class.err]="m.kind === 'error'" role="status">{{ m.text }}</p>
+      }
+    </div>
+  }
+</div>
